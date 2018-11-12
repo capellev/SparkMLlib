@@ -3,9 +3,9 @@ import org.apache.spark.mllib.tree.model.DecisionTreeModel
 import org.apache.spark.mllib.util.MLUtils
 
 // Load and parse the data file.
-val data = MLUtils.loadLibSVMFile(sc, "/home/vcapelle/Documents/Spark/Data/Covtype/covtype400000")
+val data = MLUtils.loadLibSVMFile(sc, "Data/Covtype/covtype32")
 // Split the data into training and test sets (30% held out for testing)
-val splits = data.randomSplit(Array(0.7, 0.3))
+val splits = data.randomSplit(Array(0.7, 0.3),13)
 val (trainingData, testData) = (splits(0), splits(1))
 
 // Train a DecisionTree model.
@@ -16,28 +16,48 @@ val impurity = "gini"
 val maxDepth = 5
 val maxBins = 32
 
-val timeStart = System.currentTimeMillis();
-val nbIteration = 20;
+var timeStart = System.currentTimeMillis();
+val nbIteration = 50;
+
+var model = DecisionTree.trainClassifier(trainingData, numClasses, categoricalFeaturesInfo,
+  impurity, maxDepth, maxBins)
 
 for(i <- 1 to nbIteration) {
 
-val model = DecisionTree.trainClassifier(trainingData, numClasses, categoricalFeaturesInfo,
+model = DecisionTree.trainClassifier(trainingData, numClasses, categoricalFeaturesInfo,
   impurity, maxDepth, maxBins)
+}
 
-// Evaluate model on test instances and compute test error
-val labelAndPreds = testData.map { point =>
+var timeEnd = System.currentTimeMillis();
+var time = (timeEnd - timeStart)/nbIteration;
+println("Temps moyen apprentissage : " + time + "ms")
+
+timeStart = System.currentTimeMillis();
+
+var labelAndPreds = testData.map { point =>
   val prediction = model.predict(point.features)
   (point.label, prediction)
 }
-val testErr = labelAndPreds.filter(r => r._1 != r._2).count().toDouble / testData.count()
-println("Test Error = " + testErr)
-println("Learned classification tree model:\n" + model.toDebugString)
 
+for(i <- 1 to nbIteration) {
+
+// Evaluate model on test instances and compute test error
+labelAndPreds = testData.map { point =>
+  val prediction = model.predict(point.features)
+  (point.label, prediction)
+}
 }
 
-val timeEnd = System.currentTimeMillis();
+timeEnd = System.currentTimeMillis();
+time = (timeEnd - timeStart)/nbIteration;
+println("Temps moyen analyse : " + time + "ms")
 
-val time = (timeEnd - timeStart)/nbIteration;
-println("Temps moyen " + time + "ms")
+val testErr = labelAndPreds.filter(r => r._1 != r._2).count().toDouble / testData.count()
+println("Test Error = " + testErr)
+
+
+
+
+
 
 
