@@ -20,7 +20,7 @@ val maxDepth = 5
 val maxBins = 32
 
 var timeStart = System.currentTimeMillis();
-val nbIteration = 22;
+val nbIteration = 50;
 
 var model = DecisionTree.trainClassifier(trainingData, numClasses, categoricalFeaturesInfo,
   impurity, maxDepth, maxBins)
